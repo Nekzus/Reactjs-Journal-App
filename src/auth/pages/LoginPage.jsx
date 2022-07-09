@@ -1,12 +1,35 @@
+import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Google } from '@mui/icons-material';
 import { Button, Grid, Link, TextField, Typography } from '@mui/material';
 import { AuthLayout } from '../layout/AuthLayout';
+import { useForm } from '../../hooks';
+import { checkingAuthentication, startGoogleSignIn } from '../../store/auth';
+import { useDispatch, useSelector } from 'react-redux';
 
 export const LoginPage = () => {
+    const { status } = useSelector(state => state.auth);
+
+    const dispatch = useDispatch();
+    const { email, password, onInputChange, formState } = useForm({
+        email: 'mauricio@gmail.com',
+        password: '123456',
+    });
+
+    const isAutenticating = useMemo(() => status === 'checking', [status]);
+
+    const onSubmit = e => {
+        e.preventDefault();
+        dispatch(checkingAuthentication());
+    };
+
+    const onGoogleSignIn = () => {
+        dispatch(startGoogleSignIn());
+    };
+
     return (
         <AuthLayout title="Login">
-            <form>
+            <form onSubmit={onSubmit}>
                 <Grid container>
                     <Grid
                         item
@@ -18,6 +41,9 @@ export const LoginPage = () => {
                             type="email"
                             placeholder="correo@google.com"
                             fullWidth
+                            name="email"
+                            value={email}
+                            onChange={onInputChange}
                         />
                     </Grid>
                     <Grid
@@ -30,6 +56,9 @@ export const LoginPage = () => {
                             type="password"
                             placeholder="Contraseña"
                             fullWidth
+                            name="password"
+                            value={password}
+                            onChange={onInputChange}
                         />
                     </Grid>
                     <Grid
@@ -43,6 +72,8 @@ export const LoginPage = () => {
                             sm={6}
                         >
                             <Button
+                                disabled={isAutenticating}
+                                type="submit"
                                 variant="contained"
                                 fullWidth
                             >
@@ -55,8 +86,10 @@ export const LoginPage = () => {
                             sm={6}
                         >
                             <Button
+                                disabled={isAutenticating}
                                 variant="contained"
                                 fullWidth
+                                onClick={onGoogleSignIn}
                             >
                                 <Google />
                                 <Typography sx={{ ml: 1 }}>Google</Typography>
