@@ -1,26 +1,56 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Google } from '@mui/icons-material';
-import { Button, Grid, Link, TextField, Typography } from '@mui/material';
+import {
+    Alert,
+    Button,
+    Grid,
+    Link,
+    TextField,
+    Typography,
+} from '@mui/material';
 import { AuthLayout } from '../layout/AuthLayout';
 import { useForm } from '../../hooks';
-import { checkingAuthentication, startGoogleSignIn } from '../../store/auth';
+import {
+    startGoogleSignIn,
+    startLoginWithEmailPassword,
+} from '../../store/auth';
 import { useDispatch, useSelector } from 'react-redux';
 
-export const LoginPage = () => {
-    const { status } = useSelector(state => state.auth);
+const formData = {
+    email: '',
+    password: '',
+};
 
+const formValidations = {
+    email: [value => value.includes('@'), 'El correo debe de tener una @'],
+    password: [
+        value => value.length >= 6,
+        'La contraseña debe de tener al menos 6 caracteres',
+    ],
+};
+
+export const LoginPage = () => {
+    const [formSubmitted, setFormSubmitted] = useState(false);
+    const { status, errorMessage } = useSelector(state => state.auth);
     const dispatch = useDispatch();
-    const { email, password, onInputChange, formState } = useForm({
-        email: 'mauricio@gmail.com',
-        password: '123456',
-    });
+    const {
+        email,
+        password,
+        onInputChange,
+        formState,
+        isFormValid,
+        emailValid,
+        passwordValid,
+    } = useForm(formData, formValidations);
 
     const isAutenticating = useMemo(() => status === 'checking', [status]);
 
     const onSubmit = e => {
         e.preventDefault();
-        dispatch(checkingAuthentication());
+        setFormSubmitted(true);
+        if (!isFormValid) return;
+        dispatch(startLoginWithEmailPassword(formState));
     };
 
     const onGoogleSignIn = () => {
@@ -29,7 +59,10 @@ export const LoginPage = () => {
 
     return (
         <AuthLayout title="Login">
-            <form onSubmit={onSubmit}>
+            <form
+                className="animate__animated animate__fadeIn animate__faster"
+                onSubmit={onSubmit}
+            >
                 <Grid container>
                     <Grid
                         item
@@ -44,6 +77,8 @@ export const LoginPage = () => {
                             name="email"
                             value={email}
                             onChange={onInputChange}
+                            error={!!emailValid && formSubmitted}
+                            helperText={emailValid}
                         />
                     </Grid>
                     <Grid
@@ -59,6 +94,8 @@ export const LoginPage = () => {
                             name="password"
                             value={password}
                             onChange={onInputChange}
+                            error={!!passwordValid && formSubmitted}
+                            helperText={passwordValid}
                         />
                     </Grid>
                     <Grid
@@ -66,6 +103,18 @@ export const LoginPage = () => {
                         spacing={2}
                         sx={{ mb: 2, mt: 1 }}
                     >
+                        <Grid
+                            container
+                            display={!!errorMessage ? '' : 'none'}
+                            sx={{ mt: 1 }}
+                        >
+                            <Grid
+                                item
+                                xs={12}
+                            >
+                                <Alert severity="error">{errorMessage}</Alert>
+                            </Grid>
+                        </Grid>
                         <Grid
                             item
                             xs={12}
